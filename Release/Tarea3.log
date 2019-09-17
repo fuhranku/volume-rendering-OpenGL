@@ -1,8 +1,7 @@
-﻿  glad.c
-  main.cpp
-  Shader.cpp
-  stb_image.cpp
+﻿  main.cpp
   Generando código
-  All 389 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
+  11 of 389 functions ( 2.8%) were compiled, the rest were copied from previous compilation.
+    0 functions were new in current compilation
+    0 functions had inline decision re-evaluated but remain unchanged
   Generación de código finalizada
   Tarea3.vcxproj -> C:\Users\frank\Desktop\FCG\Tareas\Tarea3\Release\Tarea3.exe
