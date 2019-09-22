@@ -14,6 +14,11 @@ const char *windowTitle = "Volume Rendering Demo";
 // Window pointer
 GLFWwindow *window;
 
+#define XDIM 256
+#define YDIM 256
+#define ZDIM 256
+
+
 /**
  * Handles the window resize
  * @param{GLFWwindow} window pointer
@@ -52,6 +57,13 @@ void buildGeometry();
  * @returns{unsigned int} GPU texture index
  * */
 unsigned int loadTexture(const char *path);
+
+/**
+ * Loads a 3D texture into the GPU
+ * @param{const char*} volume .raw file path
+ * @returns{unsigned int} GPU 3D texture index
+ * */
+unsigned int load3DTexture(const char* path);
 
 /**
  * Initialize everything

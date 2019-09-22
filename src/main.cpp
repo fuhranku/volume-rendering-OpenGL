@@ -8,6 +8,7 @@ unsigned int VBO;
 unsigned int VAO;
 // Index (GPU) of the texture
 unsigned int textureID;
+unsigned int volTexID;
 
 
 void resize(GLFWwindow *window, int width, int height){
@@ -65,38 +66,82 @@ void initGL(){
     glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
 }
 
+bool init() {
+
+	// Initialize the window, and the glad components
+	if (!initWindow() || !initGlad())
+		return false;
+	// Initialize the opengl context
+	initGL();
+	// Loads the shader
+	shader = new Shader("assets/shaders/basic.vert", "assets/shaders/basic.frag");
+	// Loads all the geometry into the GPU
+	buildGeometry();
+	// Loads the texture into the GPU
+	textureID = loadTexture("assets/textures/bricks2.jpg");
+	// Loads 3D texture into GPU
+	volTexID = load3DTexture("assets/volumes/lobster.raw");
+
+	return true;
+}
+
 void buildGeometry(){
 
-    float triangleVertices[] = {
-        // Bottom left vertex
-        -0.5f, -0.5f, 0.0f, // Position
-        1.0f, 0.0f, 0.0f,   // Color
-        // Bottom right vertex
-        0.5f, -0.5f, 0.0f, // Position
-        0.0f, 1.0f, 0.0f,  // Color
-        // Top Center vertex
-        0.0f, 0.5f, 0.0f, // Position
-        0.0f, 0.0f, 1.0f  // Color
+	float quadVertices[] = {
+		// positions        // Color   		   // texture Coords
+		-1.0f,  1.0f, 0.0f, 1.0f, 0.0f, 0.0f,  0.0f, 1.0f,
+		-1.0f, -1.0f, 0.0f, 0.0f, 1.0f, 0.0f,  0.0f, 0.0f,
+		 1.0f,  1.0f, 0.0f, 0.0f, 0.0f, 1.0f,  1.0f, 1.0f,
+		 1.0f, -1.0f, 0.0f, 0.5f, 0.5f, 0.75f, 1.0f, 0.0f,
+	};
+	// Setup plane VAO
+	glGenVertexArrays(1, &VAO);
+	glGenBuffers(1, &VBO);
+	glBindVertexArray(VAO);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
+	// Position
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+	// Color
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+	// Texture Coords
+	glEnableVertexAttribArray(2);
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+}
 
-    };
-    // Creates on GPU the vertex array
-    glGenVertexArrays(1, &VAO);
-    // Creates on GPU the vertex buffer object
-    glGenBuffers(1, &VBO);
-    // Binds the vertex array to set all the its properties
-    glBindVertexArray(VAO);
-    // Sets the buffer geometry data
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(triangleVertices), &triangleVertices, GL_STATIC_DRAW);
+unsigned int load3DTexture(const char* path) {
+	unsigned int id;
+	const int size = XDIM * YDIM * ZDIM;
+	FILE *pFile;
+	GLubyte* pVolume = new GLubyte[size];
+	errno_t err;
+	if ((err = fopen_s(&pFile, path, "rb")) != 0) {
+		std::cout << "ERROR:: Unable to load texture " << path << std::endl;
+		glDeleteTextures(1, &id);
+	}else{
+		fread(pVolume, sizeof(GLubyte), size, pFile);
+		fclose(pFile);
 
-    // Sets the vertex attributes
-    // Position
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *)0);
-    // Color
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *)(3 * sizeof(float)));
-    glBindVertexArray(0);
+		// Load data into a 3D texture
+		glGenTextures(1, &id);
+		glBindTexture(GL_TEXTURE_3D, id);
+
+		// Set the texture parameters
+		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_BASE_LEVEL, 0);
+		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAX_LEVEL, 4);
+		glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA, XDIM, YDIM, ZDIM, 0, GL_RGBA, GL_UNSIGNED_BYTE, pVolume);
+		glGenerateMipmap(GL_TEXTURE_3D);
+		delete[] pVolume;
+	}
+
+	return id;
 }
 
 unsigned int loadTexture(const char *path){
@@ -149,23 +194,6 @@ unsigned int loadTexture(const char *path){
     return id;
 }
 
-bool init(){
-
-    // Initialize the window, and the glad components
-    if (!initWindow() || !initGlad())
-        return false;
-    // Initialize the opengl context
-    initGL();
-    // Loads the shader
-    shader = new Shader("assets/shaders/basic.vert", "assets/shaders/basic.frag");
-    // Loads all the geometry into the GPU
-    buildGeometry();
-    // Loads the texture into the GPU
-    textureID = loadTexture("assets/textures/bricks2.jpg");
-
-    return true;
-}
-
 void processKeyboardInput(GLFWwindow *window){
     // Checks if the escape key is pressed
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
@@ -187,10 +215,12 @@ void render(){
     /** Draws code goes here **/
     // Use the shader
     shader->use();
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_3D, volTexID);
     // Binds the vertex array to be drawn
     glBindVertexArray(VAO);
     // Renders the triangle gemotry
-    glDrawArrays(GL_TRIANGLES, 0, 3);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     glBindVertexArray(0);
     // Swap the buffer
     glfwSwapBuffers(window);
@@ -223,7 +253,6 @@ int main(int argc, char const *argv[]){
     std::cout << "=====================================================" << std::endl
               << "        Press Escape to close the program            " << std::endl
               << "=====================================================" << std::endl;
-
     // Starts the app main loop
     update();
 
