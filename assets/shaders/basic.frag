@@ -5,12 +5,13 @@ in vec2 texCoords;
 
 // Texture 
 uniform sampler3D volTexture;
+uniform float step;
 
 // Fragment Color
 out vec4 color;
 
 void main()
 {
-	vec3 tex = vec3(texCoords,0.5f/256);
-    color = texture3D(volTexture,tex);
+	vec3 tex = vec3(texCoords.x,texCoords.y,step);
+    color = vec4(vec3(texture(volTexture,tex).r),1.0f);
 }

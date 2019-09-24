@@ -4,6 +4,7 @@
 #include <iostream>
 #include <stb_image.h>
 #include "Shader.h"
+#include "Camera.h"
 
 // Window current width
 unsigned int windowWidth = 800;
@@ -13,6 +14,27 @@ unsigned int windowHeight = 600;
 const char *windowTitle = "Volume Rendering Demo";
 // Window pointer
 GLFWwindow *window;
+// Camera class
+Camera camera;
+// Shader object
+Shader *shader, *cubeShader, *frameBufferDebug;
+// Index (GPU) of the geometry buffer
+unsigned int VBO, cubeVBO;
+// Index (GPU) vertex array object
+unsigned int VAO, cubeVAO;
+// Index (GPU) of the texture
+unsigned int textureID;
+unsigned int volTexID;
+unsigned int framebuffer = 0;
+unsigned int renderedTexture, depthRenderBuffer;
+float step = 0.0f;
+float deltaTime = 0.0f, lastFrame = 0.0f;
+bool cameraMode = false;
+
+// MVP Matrices
+glm::mat4 View;
+glm::mat4 Projection;
+glm::mat4 ModelMatrix;
 
 #define XDIM 256
 #define YDIM 256
@@ -78,6 +100,16 @@ bool init();
  * @param{GLFWwindow} window pointer
  * */
 void processKeyboardInput(GLFWwindow *window);
+
+void processMouseMovement(GLFWwindow* window);
+
+void drawTransferFunction();
+
+bool setFrameBuffer();
+
+void getVolumesBackface();
+
+void drawVolume();
 
 /**
  * Render Function
