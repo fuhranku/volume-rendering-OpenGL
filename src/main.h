@@ -17,7 +17,7 @@ GLFWwindow *window;
 // Camera class
 Camera camera;
 // Shader object
-Shader *shader, *cubeShader, *frameBufferDebug;
+Shader *shader, *cubeShader, *frameBufferDebug, *rayCastingShader;
 // Index (GPU) of the geometry buffer
 unsigned int VBO, cubeVBO;
 // Index (GPU) vertex array object
@@ -29,7 +29,9 @@ unsigned int framebuffer = 0;
 unsigned int renderedTexture, depthRenderBuffer;
 float step = 0.0f;
 float deltaTime = 0.0f, lastFrame = 0.0f;
+float mouseSpeed = 5.0f;
 bool cameraMode = false;
+
 
 // MVP Matrices
 glm::mat4 View;
@@ -54,6 +56,8 @@ void resize(GLFWwindow *window, int width, int height);
  * @returns{bool} true if everything goes ok
  * */
 bool initWindow();
+
+void updateFrameTime();
 
 /**
  * Initialize the glad library
@@ -102,6 +106,10 @@ bool init();
 void processKeyboardInput(GLFWwindow *window);
 
 void processMouseMovement(GLFWwindow* window);
+
+void onKeyPress(GLFWwindow *window, int key, int scancode, int action, int mods);
+
+void onMouseMotion(GLFWwindow* window, double xpos, double ypos);
 
 void drawTransferFunction();
 

@@ -7,6 +7,11 @@ void resize(GLFWwindow *window, int width, int height){
     glViewport(0, 0, windowWidth, windowHeight);
 }
 
+void updateFrameTime() {
+	// Camera's movement input
+
+}
+
 bool initWindow(){
     // Initialize glfw
     glfwInit();
@@ -29,7 +34,11 @@ bool initWindow(){
     glfwMakeContextCurrent(window);
 
     // Window resize callback
-    glfwSetFramebufferSizeCallback(window, resize);
+	glfwSetFramebufferSizeCallback(window, resize);
+	// Window keyboard callback
+	glfwSetKeyCallback(window, onKeyPress);
+	// Window mouse motion callback
+	glfwSetCursorPosCallback(window, onMouseMotion);
     return true;
 }
 
@@ -52,7 +61,7 @@ void initGL(){
     // Sets the ViewPort
     glViewport(0, 0, windowWidth, windowHeight);
     // Sets the clear color
-    glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
+    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 }
 
 bool init() {
@@ -66,6 +75,7 @@ bool init() {
 	shader = new Shader("assets/shaders/basic.vert", "assets/shaders/basic.frag");
 	cubeShader = new Shader("assets/shaders/cubeShader.vert", "assets/shaders/cubeShader.frag");
 	frameBufferDebug = new Shader("assets/shaders/frameBufferDebug.vert", "assets/shaders/frameBufferDebug.frag");
+	rayCastingShader = new Shader("assets/shaders/rayCasting.vert", "assets/shaders/rayCasting.frag");
 	// Loads all the geometry into the GPU
 	buildGeometry();
 	// Loads the texture into the GPU
@@ -180,7 +190,6 @@ unsigned int load3DTexture(const char* path) {
 		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexImage3D(GL_TEXTURE_3D, 0, GL_RED, XDIM, YDIM, ZDIM, 0, GL_RED, GL_UNSIGNED_BYTE, pVolume);
-		glGenerateMipmap(GL_TEXTURE_3D);
 		delete[] pVolume;
 	}
 
@@ -247,6 +256,12 @@ void processMouseMovement(GLFWwindow* window) {
 }
 
 void processKeyboardInput(GLFWwindow *window){
+
+	// Camera's movement input
+	float currentFrame = (float)glfwGetTime();
+	deltaTime = currentFrame - lastFrame;
+	lastFrame = currentFrame;
+
     // Checks if the escape key is pressed
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         // Tells glfw to close the window as soon as possible
@@ -261,6 +276,8 @@ void processKeyboardInput(GLFWwindow *window){
 		cubeShader = new Shader("assets/shaders/cubeShader.vert", "assets/shaders/cubeShader.frag");
 		delete frameBufferDebug;
 		frameBufferDebug = new Shader("assets/shaders/frameBufferDebug.vert", "assets/shaders/frameBufferDebug.frag");
+		delete rayCastingShader;
+		rayCastingShader = new Shader("assets/shaders/rayCasting.vert", "assets/shaders/rayCasting.frag");
     }
 
 	if (glfwGetKey(window, GLFW_KEY_T) == GLFW_PRESS && step < 1.0f){
@@ -271,15 +288,6 @@ void processKeyboardInput(GLFWwindow *window){
 		step -= 1.0f / 256;
 	}
 
-	// Camera's movement input
-	float currentFrame = (float)glfwGetTime();
-	deltaTime = currentFrame - lastFrame;
-	lastFrame = currentFrame;
-
-	if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS && !cameraMode)
-		cameraMode = true;
-	else if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS && cameraMode)
-		cameraMode = false;
 
 	if (cameraMode) {
 		if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
@@ -302,6 +310,29 @@ void processKeyboardInput(GLFWwindow *window){
 	}
 
 
+}
+
+void onKeyPress(GLFWwindow *window, int key, int scancode, int action, int mods) {
+	if (action == GLFW_PRESS) {
+		switch (key) {
+		case GLFW_KEY_C:
+			if (!cameraMode)
+				cameraMode = true;
+			else
+				cameraMode = false;
+		}
+	}
+}
+
+void onMouseMotion(GLFWwindow* window, double xpos, double ypos){
+	/*if (cameraMode) {
+		glfwSetCursorPos(window, windowWidth / 2.0, windowHeight / 2.0);
+		GLfloat xoffset = ((windowWidth / 2.0) - xpos) * mouseSpeed * deltaTime;
+		GLfloat yoffset = ((windowHeight / 2.0) - ypos) * mouseSpeed * deltaTime;
+
+		std::cout << xoffset << "," << yoffset << std::endl;
+		camera.mouseUpdate(glm::vec2(xoffset, yoffset));
+	}*/
 }
 
 void drawTransferFunction() {
@@ -384,7 +415,7 @@ void getVolumesBackface() {
 	glCullFace(GL_BACK);
 
 	/* For DEBUG purposes only */
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	/*glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	// Use the shader
 	frameBufferDebug->use();
 	glActiveTexture(GL_TEXTURE0);
@@ -392,15 +423,16 @@ void getVolumesBackface() {
 	//Draw QUAD for debug purposes
 	//Binds the vertex array to be drawn
 	glBindVertexArray(VAO);
-	// Renders the triangle gemotry
+	// Renders the triangle geometry
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-	glBindVertexArray(0);
+	glBindVertexArray(0);*/
 
 }
 
 void drawVolume(){
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	glViewport(0, windowHeight*0.15, windowWidth, windowHeight*0.85);
+	//glViewport(0, windowHeight*0.15, windowWidth, windowHeight*0.85);
+	glViewport(0, 0, windowWidth, windowHeight);
 	// View matrix
 	View = camera.getWorldToViewMatrix();
 	// Projection matrix
@@ -408,12 +440,16 @@ void drawVolume(){
 	// World transformation
 	ModelMatrix = glm::mat4(1.0f);
 	// Shader uniform parameters
-	cubeShader->use();
-	cubeShader->setMat4("model", ModelMatrix);
-	cubeShader->setMat4("view", View);
-	cubeShader->setMat4("projection", Projection);
+	rayCastingShader->use();
+	rayCastingShader->setMat4("model", ModelMatrix);
+	rayCastingShader->setMat4("view", View);
+	rayCastingShader->setMat4("projection", Projection);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_3D, volTexID);
+	rayCastingShader->setInt("volTexID", 0);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, renderedTexture);
+	rayCastingShader->setInt("renderedTexture", 1);
 	//Binds the vertex array to be drawn
 	glBindVertexArray(cubeVAO);
 	// Renders the triangle gemotry
@@ -433,7 +469,7 @@ void render(){
 	getVolumesBackface();
 
 	// Drawing volume
-	//drawVolume();
+	drawVolume();
 
 	// Set default viewport size
 	glViewport(0, 0, windowWidth, windowHeight);
@@ -446,6 +482,8 @@ void update(){
 
     // Loop until something tells the window, that it has to be closed
     while (!glfwWindowShouldClose(window)){
+		// Update frame time
+		updateFrameTime();
         // Checks for keyboard inputs
         processKeyboardInput(window);
 		// Checks for mouse position
