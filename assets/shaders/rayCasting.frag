@@ -2,9 +2,10 @@
 // Vertex color (interpolated/fragment)
 in vec3 vColor;
 
-// Texture 
+// Uniforms 
 uniform sampler3D volTexID;
 uniform sampler2D renderedTexture;
+uniform vec2 windowSize;
 
 // Fragment Color
 out vec4 fragColor;
@@ -12,7 +13,7 @@ out vec4 fragColor;
 void main()
 {
 	vec4 Color = vec4(0.0f,0.0f,0.0f,1.0f);
-	vec2 coord = gl_FragCoord.xy / vec2(800,600);
+	vec2 coord = (gl_FragCoord.xy-windowSize.y) / windowSize;
 	vec3 rayDir = vec3(texture(renderedTexture,coord).xyz - vColor);
 	vec3 rayIn = vColor;
 	float D = length(rayDir);

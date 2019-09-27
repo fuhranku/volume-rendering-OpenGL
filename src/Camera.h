@@ -3,13 +3,15 @@
 #include <iostream>
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/transform.hpp>
+#include <glm\gtx\euler_angles.hpp>
 
 class Camera {
 public:
 	glm::vec3 position;
 	glm::vec3 viewDirection;
-	const glm::vec3 UP;
+	glm::vec3 UP;
 	glm::vec2 oldMousePosition;
+	float yaw, pitch;
 	
 	//Functions
 	Camera();

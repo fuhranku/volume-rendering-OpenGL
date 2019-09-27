@@ -8,8 +8,9 @@ void resize(GLFWwindow *window, int width, int height){
 }
 
 void updateFrameTime() {
-	// Camera's movement input
-
+	float currentFrame = (float)glfwGetTime();
+	deltaTime = currentFrame - lastFrame;
+	lastFrame = currentFrame;
 }
 
 bool initWindow(){
@@ -101,6 +102,31 @@ void buildGeometry(){
 	glBindVertexArray(VAO);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
+	// Position
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+	// Color
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+	// Texture Coords
+	glEnableVertexAttribArray(2);
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+
+	// Transfer function QUAD
+	float tfQuadVertices[] = {
+		// positions        // Color   		   // texture Coords
+		-1.0f,  1.0f, 0.0f, 1.0f, 0.0f, 0.0f,  0.0f, 1.0f,
+		-1.0f,  0.0f, 0.0f, 0.0f, 1.0f, 0.0f,  0.0f, 0.0f,
+		 1.0f,  1.0f, 0.0f, 0.0f, 0.0f, 1.0f,  1.0f, 1.0f,
+		 1.0f, 0.0f, 0.0f, 0.5f, 0.5f, 0.75f, 1.0f, 0.0f,
+	};
+
+	// Setup plane VAO
+	glGenVertexArrays(1, &tfVAO);
+	glGenBuffers(1, &tfVBO);
+	glBindVertexArray(tfVAO);
+	glBindBuffer(GL_ARRAY_BUFFER, tfVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(tfQuadVertices), &tfQuadVertices, GL_STATIC_DRAW);
 	// Position
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
@@ -247,20 +273,17 @@ unsigned int loadTexture(const char *path){
 }
 
 void processMouseMovement(GLFWwindow* window) {
-	double xpos, ypos;
+	/*double xpos, ypos;
 	if (cameraMode) {
 		glfwGetCursorPos(window, &xpos, &ypos);
 		glm::vec2 mousePosition(xpos, ypos);
 		camera.mouseUpdate(mousePosition);
-	}
+	}*/
 }
 
 void processKeyboardInput(GLFWwindow *window){
 
-	// Camera's movement input
-	float currentFrame = (float)glfwGetTime();
-	deltaTime = currentFrame - lastFrame;
-	lastFrame = currentFrame;
+
 
     // Checks if the escape key is pressed
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
@@ -316,28 +339,33 @@ void onKeyPress(GLFWwindow *window, int key, int scancode, int action, int mods)
 	if (action == GLFW_PRESS) {
 		switch (key) {
 		case GLFW_KEY_C:
-			if (!cameraMode)
+			if (!cameraMode) {
 				cameraMode = true;
-			else
+				glfwSetCursorPos(window, windowWidth / 2.0, windowHeight / 2.0);
+				glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+			}
+			else {
 				cameraMode = false;
+				glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+			}
 		}
 	}
 }
 
 void onMouseMotion(GLFWwindow* window, double xpos, double ypos){
-	/*if (cameraMode) {
+	if (cameraMode) {
 		glfwSetCursorPos(window, windowWidth / 2.0, windowHeight / 2.0);
-		GLfloat xoffset = ((windowWidth / 2.0) - xpos) * mouseSpeed * deltaTime;
-		GLfloat yoffset = ((windowHeight / 2.0) - ypos) * mouseSpeed * deltaTime;
+		double xoffset = ((windowWidth / 2.0) - xpos) * mouseSpeed * deltaTime;
+		double yoffset = ((windowHeight / 2.0) - ypos) * mouseSpeed * deltaTime;
 
-		std::cout << xoffset << "," << yoffset << std::endl;
+		//std::cout << xoffset << "," << yoffset << std::endl;
 		camera.mouseUpdate(glm::vec2(xoffset, yoffset));
-	}*/
+	}
 }
 
 void drawTransferFunction() {
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	glViewport(0, 0, windowWidth, windowHeight*0.15);
+	glViewport(0, 0, windowWidth, windowHeight*0.30);
 	// Use the shader
 	shader->use();
 	shader->setFloat("step", step);
@@ -346,6 +374,13 @@ void drawTransferFunction() {
 	//Draw QUAD for debug purposes
 	//Binds the vertex array to be drawn
 	glBindVertexArray(VAO);
+	// Renders the triangle gemotry
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+	glBindVertexArray(0);
+
+	// draw transfer function quad
+	//Binds the vertex array to be drawn
+	glBindVertexArray(tfVAO);
 	// Renders the triangle gemotry
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	glBindVertexArray(0);
@@ -431,8 +466,8 @@ void getVolumesBackface() {
 
 void drawVolume(){
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	//glViewport(0, windowHeight*0.15, windowWidth, windowHeight*0.85);
-	glViewport(0, 0, windowWidth, windowHeight);
+	glViewport(0, windowHeight*0.30, windowWidth, windowHeight*0.7);
+	//glViewport(0, 0, windowWidth, windowHeight);
 	// View matrix
 	View = camera.getWorldToViewMatrix();
 	// Projection matrix
@@ -444,12 +479,13 @@ void drawVolume(){
 	rayCastingShader->setMat4("model", ModelMatrix);
 	rayCastingShader->setMat4("view", View);
 	rayCastingShader->setMat4("projection", Projection);
+	rayCastingShader->setInt("volTexID", 0);
+	rayCastingShader->setInt("renderedTexture", 1);
+	rayCastingShader->setVec2("windowSize", glm::vec2(windowWidth, windowHeight*0.3f));
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_3D, volTexID);
-	rayCastingShader->setInt("volTexID", 0);
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, renderedTexture);
-	rayCastingShader->setInt("renderedTexture", 1);
 	//Binds the vertex array to be drawn
 	glBindVertexArray(cubeVAO);
 	// Renders the triangle gemotry
@@ -463,7 +499,7 @@ void render(){
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	// Drawing transfer function
-	//drawTransferFunction();
+	drawTransferFunction();
 
 	// Draw front-faced culling volume
 	getVolumesBackface();

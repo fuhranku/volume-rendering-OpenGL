@@ -19,9 +19,9 @@ Camera camera;
 // Shader object
 Shader *shader, *cubeShader, *frameBufferDebug, *rayCastingShader;
 // Index (GPU) of the geometry buffer
-unsigned int VBO, cubeVBO;
+unsigned int VBO, cubeVBO, tfVBO;
 // Index (GPU) vertex array object
-unsigned int VAO, cubeVAO;
+unsigned int VAO, cubeVAO, tfVAO;
 // Index (GPU) of the texture
 unsigned int textureID;
 unsigned int volTexID;
@@ -29,7 +29,7 @@ unsigned int framebuffer = 0;
 unsigned int renderedTexture, depthRenderBuffer;
 float step = 0.0f;
 float deltaTime = 0.0f, lastFrame = 0.0f;
-float mouseSpeed = 5.0f;
+float mouseSpeed = 6.0f;
 bool cameraMode = false;
 
 

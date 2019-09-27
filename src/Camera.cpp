@@ -1,15 +1,21 @@
 #include "Camera.h"
 
-const float MOVEMENT_SPEED = 12.0f;
+const float MOVEMENT_SPEED = 4.0f;
 
 Camera::Camera() :
-	viewDirection(0.039822,0.091464,0.995009),
+	viewDirection(-0.011437, -0.186789, -0.982333),
 	UP(0.0f, 1.0f, 0.0f),
-	position(0.068821, -0.227513, -4.733894)
-{}
+	position(0.013748, 0.173624, 1.947336)
+{
+	yaw = 0.0f;
+	pitch = 0.0f;
+}
 
 void Camera::mouseUpdate(const glm::vec2 &newMousePosition) {
-	glm::vec2 mouseDelta = newMousePosition - oldMousePosition;
+	
+	
+	
+	/*glm::vec2 mouseDelta = newMousePosition - oldMousePosition;
 	if (glm::length(mouseDelta) > 100.0f) {
 		oldMousePosition = newMousePosition;
 		return;
@@ -20,7 +26,12 @@ void Camera::mouseUpdate(const glm::vec2 &newMousePosition) {
 		glm::rotate(-mouseDelta.y * ROTATIONAL_SPEED, toRotateAround);
 	viewDirection = glm::mat3(rotator) * viewDirection;
 
-	oldMousePosition = newMousePosition;
+	oldMousePosition = newMousePosition;*/
+	yaw += newMousePosition.x;
+	pitch += newMousePosition.y;
+	glm::mat4 Rotation = glm::yawPitchRoll(glm::radians(yaw), glm::radians(pitch), 0.0f);
+	viewDirection = glm::vec3(Rotation * glm::vec4(0.0f, 0.0f, -1.0f, 0.0f));
+	UP = glm::vec3(Rotation * glm::vec4(0.0f, 1.0f, 0.0f, 0.0f));
 }
 
 glm::mat4 Camera::getWorldToViewMatrix() const {
